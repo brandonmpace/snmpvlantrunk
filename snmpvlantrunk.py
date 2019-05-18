@@ -63,10 +63,22 @@ BYTES_PER_GROUP = int(VLAN_GROUP_SIZE / 8)
 
 # Lists of OIDs in each VLAN group (as either prefix without interface digit or as the human-friendly name)
 GROUP_TO_OIDS = {
-    0: [".1.3.6.1.4.1.89.48.61.1.2.", "vlanTrunkModeList1to1024"],
-    1: [".1.3.6.1.4.1.89.48.61.1.3.", "vlanTrunkModeList1025to2048"],
-    2: [".1.3.6.1.4.1.89.48.61.1.4.", "vlanTrunkModeList2049to3072"],
-    3: [".1.3.6.1.4.1.89.48.61.1.5.", "vlanTrunkModeList3073to4094"]
+    0: [
+        ".1.3.6.1.4.1.89.48.61.1.2.", "vlanTrunkModeList1to1024",  # Dell
+        ".1.3.6.1.4.1.9.9.46.1.6.1.1.4.", "vlanTrunkPortVlansEnabled"  # Cisco
+    ],
+    1: [
+        ".1.3.6.1.4.1.89.48.61.1.3.", "vlanTrunkModeList1025to2048",  # Dell
+        ".1.3.6.1.4.1.9.9.46.1.6.1.1.17.", "vlanTrunkPortVlansEnabled2k"  # Cisco
+    ],
+    2: [
+        ".1.3.6.1.4.1.89.48.61.1.4.", "vlanTrunkModeList2049to3072",  # Dell
+        ".1.3.6.1.4.1.9.9.46.1.6.1.1.18.", "vlanTrunkPortVlansEnabled3k"  # Cisco
+    ],
+    3: [
+        ".1.3.6.1.4.1.89.48.61.1.5.", "vlanTrunkModeList3073to4094",  # Dell
+        ".1.3.6.1.4.1.9.9.46.1.6.1.1.19.", "vlanTrunkPortVlansEnabled4k"  # Cisco
+    ]
 }
 
 
@@ -223,10 +235,11 @@ def group_for_oid(oid: str) -> int:
     :return: int
     """
     for group, oid_list in GROUP_TO_OIDS.items():
-        if any(oid.startswith(item) for item in oid_list):
+        # For .N.N... prefixes, check if input oid starts with it. For names, check for full match.
+        if any((((item.isalnum() is False) and oid.startswith(item)) or (oid == item)) for item in oid_list):
             return group
     # No group found:
-    raise ValueError(f"OID {oid} does not exist in groups dict!")
+    raise ValueError(f"OID '{oid}' does not exist in groups dict! Valid OID prefixes/names per-group: {GROUP_TO_OIDS}")
 
 
 def group_for_vlan(vlan_id: int) -> int:
